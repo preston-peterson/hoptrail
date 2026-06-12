@@ -1,0 +1,114 @@
+# =============================================================================
+# Hoptrail — .gitignore
+# =============================================================================
+# Lines are grouped by category with a comment header explaining the rationale
+# for each group.
+# =============================================================================
+
+# --- Go build artifacts ---
+# `go build` writes the binary to the working directory; the canonical binary
+# name is 'hoptrail' (and 'hoptrail.exe' if a Windows build ever happens).
+# 'main' catches accidental `go build` without -o. *.test catches test binaries
+# left behind by `go test -c`. *.out catches profile and coverage outputs by
+# default (more specific patterns below for clarity).
+#
+# Leading slash anchors these patterns to the repo root — without it, the
+# bare 'hoptrail' rule would also match the cmd/hoptrail/ source directory
+# at any depth, silently un-tracking the package's .go files (which is what
+# happened from project init until step-25 caught it).
+/hoptrail
+/hoptrail.exe
+/main
+*.test
+*.out
+
+# --- Go cache / vendor ---
+# Standard Go toolchain paths live outside the project tree, but a stray
+# GOCACHE override or experimental tool could write them here. /vendor/ stays
+# out unless vendored deps are adopted later; revisit if so.
+/.gocache/
+/vendor/
+
+# --- Runtime data ---
+# The SQLite database (and its WAL/SHM sidecars) is the user's probe history
+# and should never appear in the source tree. The wildcard catches any *.db
+# file, not just the canonical hoptrail.db, in case a developer creates a
+# scratch DB during testing.
+*.db
+*.db-wal
+*.db-shm
+hoptrail.pid
+
+# --- Logs ---
+# Where stdout/stderr gets captured during development:
+#     hoptrail serve > logs/run.log 2>&1
+# systemd-managed installs capture via journalctl and don't create logs/.
+logs/
+
+# --- Live config ---
+# config.yaml is the user's live, customized configuration. The shipped
+# template is config.yaml.example; the live config is generated from it on
+# first install and edited per-user. Auto-merge backups (config.yaml.bak.*)
+# stay out too.
+config.yaml
+config.yaml.bak.*
+
+# --- Profiling / coverage output ---
+# `go test -coverprofile=coverage.out` and pprof outputs.
+coverage.out
+coverage.html
+profile.out
+*.prof
+*.pprof
+
+# --- Frontend build output ---
+# The Svelte+Vite UI source lives in web/src/ and web/public/; Vite
+# writes its compiled output to internal/web/dist/ so the Go binary
+# can embed it via embed.FS. A placeholder internal/web/dist/index.html
+# is tracked so `go build` works on a fresh checkout before any
+# `npm run build`; everything else under dist/ is build output and
+# stays out of git (assets/ hashed bundles, copied public/ assets like
+# favicon.svg).
+internal/web/dist/*
+!internal/web/dist/index.html
+web/node_modules/
+web/.svelte-kit/
+web/.next/
+web/.vite/
+
+# --- Install backup snapshots ---
+# An in-app updater (post-v0.1) would snapshot the live install before
+# swapping in a new release. These are host-specific recovery state, not
+# source. Defensive — the path doesn't exist yet but reserving the pattern.
+.backups/
+
+# --- Editor / IDE clutter ---
+# Personal preferences, not project state.
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS metadata ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Release artifacts ---
+# Release tooling writes the release tarball (or zip) and .sha256 to the
+# parent of the project tree, so they shouldn't normally land here. The
+# patterns below are defensive — they keep accidental in-tree builds out of
+# commits if the tooling is ever invoked from somewhere unexpected.
+hoptrail-v*.tar.gz
+hoptrail-v*.tar.gz.sha256
+hoptrail-v*.zip
+hoptrail-v*.zip.sha256
+
+# --- Claude Code (maintainer-only, never public) ---
+.claude/
+HANDOFF*.md
+
+# Internal design/decision docs — maintainer-only, never published
+# (the public repo ships user/operator docs only).
+/docs/design/
