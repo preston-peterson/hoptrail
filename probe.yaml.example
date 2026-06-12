@@ -1,0 +1,61 @@
+# hoptrail remote-probe configuration
+#
+# The probe role (v0.3 distributed probing): this process probes from
+# its own site and pushes results to a central hoptrail daemon, which
+# stores them and serves the UI. A remote probe has no web UI and no local
+# database beyond a small spill buffer.
+#
+# Targets are NOT configured here. Central owns the target set; the
+# probe receives it on every heartbeat, so adding/removing targets in
+# the central's UI propagates here within one heartbeat interval.
+#
+# Validate without starting:
+#   hoptrail check-config --probe --config /path/to/probe.yaml
+# Run:
+#   hoptrail probe --config /etc/hoptrail/probe.yaml
+# The binary needs cap_net_raw, same as the central:
+#   sudo setcap cap_net_raw+ep $(which hoptrail)
+
+# This probe's stable identity: kebab-case, 2-32 chars. Central keys
+# all of this probe's data by it — changing it later orphans history
+# under the old name. "local" and "all" are reserved.
+probe_id: "site-east-pi"
+
+central:
+  # Base URL of the central daemon. LAN address, or the
+  # Tailscale/WireGuard address for cross-site deployments. http is
+  # fine on a trusted or mesh-encrypted network; https works too.
+  url: "http://central.local:8080"
+
+  # Bearer token — generate on central with `hoptrail token gen`,
+  # then add it to BOTH the central's probes.tokens list and here.
+  token: "replace-with-output-of-hoptrail-token-gen"
+
+  # Registration cadence. Each heartbeat also refreshes the target
+  # set from central. 60s default; faster helps while debugging a
+  # new deploy.
+  heartbeat_interval: "60s"
+
+  # How often buffered samples are pushed to central.
+  ingest_interval: "5s"
+
+probe:
+  # Same knobs as the central's probe block; this probe measures its
+  # targets at this cadence.
+  interval: "1s"
+  discovery_interval: "30s"
+  max_hops: 30
+  timeout: "2s"
+  route_change_threshold: 5
+
+buffer:
+  # Partition-recovery spill: when central is unreachable, batches
+  # accumulate here and drain automatically on reconnect. ~50 MB
+  # holds roughly 14 hours at default cadence; when full, oldest
+  # batches are dropped (loudly).
+  path: "/var/lib/hoptrail/probe-buffer.db"
+  max_size_mb: 50
+
+log:
+  level: "info"
+  format: "text"
