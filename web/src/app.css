@@ -1,0 +1,164 @@
+/*
+ * Hoptrail design tokens.
+ *
+ * Theming model: CSS custom properties with three sources of truth
+ * (in precedence order):
+ *
+ *   1. data-theme="light" or "dark" on <html> — manual user override
+ *   2. @media (prefers-color-scheme: dark) — system preference
+ *   3. :root defaults — light theme baseline
+ *
+ * The theme toggle in StatusBar.svelte sets data-theme; absence of
+ * data-theme means "follow system." Tokens here are color, spacing,
+ * typography, and one font-stack. Component styles consume these via
+ * var(--token) so themes swap by attribute, no rebuild.
+ */
+
+:root {
+  /* Surface and text */
+  --bg:          #f8fafc;
+  --bg-elevated: #ffffff;
+  --bg-sunken:   #f1f5f9;
+  --fg:          #0f172a;
+  --fg-muted:    #64748b;
+  --fg-subtle:   #94a3b8;
+  --border:      #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Semantic */
+  --accent:  #3b82f6;
+  --accent-bg: #dbeafe;
+  --success: #10b981;
+  --warn:    #f59e0b;
+  --danger:  #ef4444;
+
+  /* Per-hop chart palette — 10 colors that cycle for >10 hops.
+     Chosen to be distinguishable in both light and dark themes. */
+  --hop-1:  #2563eb;
+  --hop-2:  #16a34a;
+  --hop-3:  #d97706;
+  --hop-4:  #db2777;
+  --hop-5:  #7c3aed;
+  --hop-6:  #0891b2;
+  --hop-7:  #ca8a04;
+  --hop-8:  #be185d;
+  --hop-9:  #4f46e5;
+  --hop-10: #65a30d;
+
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius:    0.5rem;
+  --radius-lg: 0.75rem;
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono",
+               Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow:    0 4px 6px -1px rgba(15, 23, 42, 0.10),
+               0 2px 4px -2px rgba(15, 23, 42, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:          #0f172a;
+    --bg-elevated: #1e293b;
+    --bg-sunken:   #020617;
+    --fg:          #f1f5f9;
+    --fg-muted:    #94a3b8;
+    --fg-subtle:   #64748b;
+    --border:      #334155;
+    --border-strong: #475569;
+
+    --accent:    #60a5fa;
+    --accent-bg: #1e3a8a;
+    --success:   #34d399;
+    --warn:      #fbbf24;
+    --danger:    #f87171;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow:    0 4px 6px -1px rgba(0, 0, 0, 0.5),
+                 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Manual overrides bypass system preference */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg:          #f8fafc;
+  --bg-elevated: #ffffff;
+  --bg-sunken:   #f1f5f9;
+  --fg:          #0f172a;
+  --fg-muted:    #64748b;
+  --fg-subtle:   #94a3b8;
+  --border:      #e2e8f0;
+  --border-strong: #cbd5e1;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          #0f172a;
+  --bg-elevated: #1e293b;
+  --bg-sunken:   #020617;
+  --fg:          #f1f5f9;
+  --fg-muted:    #94a3b8;
+  --fg-subtle:   #64748b;
+  --border:      #334155;
+  --border-strong: #475569;
+}
+
+/* ---------- base reset ---------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+code { font-family: var(--font-mono); }
+
+/* ---------- top-level layout grid ----------
+ *
+ * Status bar across the top, then the operator-arranged section
+ * stack (step-126/127): a full-width page-scrolling main column,
+ * plus an optional vertical dock pinned left or right (any section
+ * can be dragged onto a screen edge to dock it). data-dock is set
+ * from the saved layout by App.svelte.
+ */
+#app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "status"
+    "main";
+}
+#app[data-dock='right'] {
+  grid-template-columns: 1fr var(--dock-w, 340px);
+  grid-template-areas:
+    "status status"
+    "main   dock";
+}
+#app[data-dock='left'] {
+  grid-template-columns: var(--dock-w, 340px) 1fr;
+  grid-template-areas:
+    "status status"
+    "dock   main";
+}
