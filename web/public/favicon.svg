@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    :root { --mark: #3b82f6; }
+    @media (prefers-color-scheme: dark) { :root { --mark: #60a5fa; } }
+    .stroke { fill: none; stroke: var(--mark); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .fill { fill: var(--mark); }
+    .ring { fill: none; stroke: var(--mark); stroke-width: 1.8; }
+  </style>
+  <!-- Trail: three hops zigzagging to the destination. -->
+  <polyline class="stroke" points="5,21 12,11 19,23 25,13" />
+  <circle class="fill" cx="5"  cy="21" r="2.6" />
+  <circle class="fill" cx="12" cy="11" r="2.6" />
+  <circle class="fill" cx="19" cy="23" r="2.6" />
+  <circle class="fill" cx="25" cy="13" r="2.6" />
+  <!-- Sonar ping radiating from the destination. Continuous 2s cycle:
+       the ring expands from the node's edge outward and fades to zero
+       opacity. SMIL animation chosen over CSS so it also renders in
+       browser-tab favicon contexts where CSS animation support varies. -->
+  <circle class="ring" cx="25" cy="13" r="2.6">
+    <animate attributeName="r" values="2.6;9.5" dur="1.5s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="1;0" dur="1.5s" repeatCount="indefinite" />
+  </circle>
+</svg>
