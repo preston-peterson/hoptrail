@@ -1,0 +1,109 @@
+# hoptrail configuration
+#
+# This is the shipped template. On install, copy it to the live config
+# path (default /etc/hoptrail/config.yaml) and edit to taste. Every value
+# below is the built-in default — a field you don't set keeps the default,
+# so a minimal config file only needs the lines that differ.
+#
+# Validate a config without starting the daemon:
+#     hoptrail check-config --config /path/to/config.yaml
+
+# Address the HTTP server binds to. ":8080" listens on all interfaces;
+# "127.0.0.1:8080" listens on loopback only. hoptrail has no built-in
+# authentication — if you need it reachable beyond a trusted LAN, put a
+# reverse proxy in front and bind this to loopback.
+listen: ":8080"
+
+# Anti-DNS-rebinding Host-header allowlist. The web API rejects
+# state-changing requests whose Host isn't recognized. Loopback, bare
+# IP addresses, and single-label/.local intranet names (e.g.
+# "hoptrail", "nas.local") are always accepted — so direct LAN access
+# needs nothing here. Add reverse-proxy hostnames or public FQDNs you
+# reach the UI at:
+#   allowed_hosts: ["hoptrail.example.com", "monitor.internal.net"]
+allowed_hosts: []
+
+storage:
+  # SQLite database file. The parent directory is created automatically
+  # on first run (mode 0755). The path must be writable by the user the
+  # daemon runs as — production installs typically pre-create
+  # /var/lib/hoptrail/ owned by a dedicated service user, but dev runs
+  # work out of the box.
+  path: "/var/lib/hoptrail/hoptrail.db"
+
+  # How many days of raw probe samples to keep. The retention job runs
+  # hourly and deletes anything older. Must be >= 1.
+  retention_days: 7
+
+probe:
+  # The monitored target set is managed from the web UI (click "+" in
+  # the tab row) and persisted in the daemon's SQLite store. A fresh
+  # install boots into an empty state with no tabs; add a target via
+  # the UI to start monitoring. See HANDOFF §1 step-32 for context.
+
+  # How often each already-discovered hop is pinged. This is the cadence
+  # behind the latency timeline. Must be positive.
+  interval: "1s"
+
+  # How often a full TTL sweep runs to discover new hops and feed
+  # route-change detection. Slower than `interval` on purpose — discovery
+  # is about path shape, not latency resolution.
+  discovery_interval: "30s"
+
+  # The largest TTL probed. 30 is plenty for almost any real path; the
+  # hard ceiling is 64.
+  max_hops: 30
+
+  # How long a single probe waits for a response before being recorded as
+  # a timeout. Must be positive, and must not exceed `interval` (a timeout
+  # longer than the per-hop interval would let probes pile up).
+  timeout: "2s"
+
+  # How many consecutive sightings of a new IP at a given hop are required
+  # before a route change is flagged. This is the ECMP-bucketing knob:
+  # internet paths load-balance, so the same hop legitimately shows
+  # different IPs probe-to-probe. A higher value is more conservative
+  # (fewer false route-change events); a lower value reacts faster. Must
+  # be >= 1.
+  route_change_threshold: 5
+
+rdns:
+  # Reverse-DNS worker. When enabled, a background goroutine periodically
+  # scans the samples table for IPs that haven't been looked up yet, runs
+  # a PTR query for each through the system resolver, and caches the
+  # result in the rdns table. The path response then surfaces hostnames
+  # alongside IPs, so the hop table reads "router.local (192.168.1.1)"
+  # instead of just "192.168.1.1".
+  #
+  # The worker is conservative by default: poll every 60s, 50 IPs per
+  # batch, 200ms between lookups, 2s timeout per lookup. Failed lookups
+  # are cached too (as NULL hostnames) so the same dead-end IP doesn't
+  # get re-queried every cycle.
+  #
+  # Disable this if you'd rather not leak intermediate hops to public
+  # DNS resolvers, or if you're running against a known-target set where
+  # the names don't matter.
+  enabled: true
+
+log:
+  # Verbosity: debug | info | warn | error.
+  # info is the right default — debug logs every probe and is only useful
+  # while actively troubleshooting.
+  level: "info"
+
+  # Output format: text | json.
+  # text is human-readable; json suits log aggregation.
+  format: "text"
+
+probes:
+  # v0.3 distributed probing: remote `hoptrail probe` processes push
+  # their samples to this daemon's /api/ingest/* endpoints, each
+  # authenticating with a bearer token from this list. The default
+  # (no tokens) disables ingest entirely — the right shape for a
+  # single-host deploy.
+  #
+  # Use a long random secret (32+ chars); the same token goes into the
+  # probe's config. Remove a token and restart to revoke that probe.
+  #
+  # tokens:
+  #   - "replace-with-a-long-random-secret"
