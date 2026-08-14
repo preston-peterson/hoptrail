@@ -1,0 +1,19 @@
+# npm artifacts — not committed
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite cache and any local environment overrides
+.vite/
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Note: the build output target is ../internal/web/dist/ (see
+# vite.config.js). That directory is committed with a placeholder so
+# the Go //go:embed directive always finds something at compile time;
+# `npm run build` overwrites it.
