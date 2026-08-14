@@ -1,0 +1,5 @@
+# Files that may legitimately contain the maintainer name / matched patterns.
+# One path glob per line. LICENSE is always allowed implicitly.
+# Example (uncomment if this repo has an about/credits page):
+# templates/about.html
+# about.md
